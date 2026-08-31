@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coyote Time & Girdi Tamponu — Hadouken</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: #0c0a09;
+        font-family: system-ui, sans-serif;
+        color: #a8a29e;
+      }
+      canvas {
+        background: #1c1917;
+        border-radius: 8px;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+      }
+      p {
+        margin: 0;
+        font-size: 14px;
+      }
+      kbd {
+        background: #292524;
+        color: #e7e5e4;
+        border-radius: 4px;
+        padding: 1px 6px;
+        font-family: ui-monospace, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+    <p>
+      <kbd>← →</kbd> yürü · <kbd>Space</kbd>/<kbd>↑</kbd> zıpla ·
+      <kbd>↓</kbd> <kbd>↘</kbd> <kbd>→</kbd> + <kbd>J</kbd> special (hadouken)
+    </p>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

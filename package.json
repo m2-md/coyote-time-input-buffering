@@ -1,0 +1,21 @@
+{
+  "name": "coyote-time-input-buffering",
+  "version": "1.0.0",
+  "description": "Zaman damgalı girdi tamponu, komut kuyruğu, negatif kenar ve dizi tanıma (hadouken) — tarayıcısız test edilebilir kısa süreli oyun hafızası",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "bench": "vite-node bench/bench.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0",
+    "vite-node": "^2.1.0",
+    "vitest": "^2.1.0"
+  }
+}
