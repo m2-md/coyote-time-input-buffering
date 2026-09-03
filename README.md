@@ -4,6 +4,9 @@
 **▶ [Live demo](https://m2-md.github.io/coyote-time-input-buffering/)** · [Source](https://github.com/m2-md/coyote-time-input-buffering)
 <!-- LINKS:END -->
 
+> A timestamped input buffer, command queue, coyote jump forgiveness, and a
+> fighting-game sequence recognizer (Hadouken parser) — testable headless in Vitest.
+
 Working code for the article "Why the Hadouken Didn't Come Out: Beyond Coyote Time —
 Input Buffering, Command Queues and the Game's Short-Term Memory".
 
@@ -81,6 +84,13 @@ sequence produces the expected commands (`["jump"]` + special).
 ```bash
 npm run build    # tsc && vite build → dist/
 ```
+
+## Tech stack
+
+- TypeScript
+- Vite / vite-node
+- Vitest
+- HTML5 Canvas 2D
 
 ## File layout
 
