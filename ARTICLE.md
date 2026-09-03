@@ -1,4 +1,3 @@
-
 # Hadouken Neden Çıkmadı: Coyote Time'ın Ötesinde Girdi Tamponu, Komut Kuyruğu ve Oyunun Kısa Süreli Hafızası
 
 *Coyote time affedici bir platformer'ın sadece başlangıcıydı. Bu yazıda girdiyi bir olay olmaktan çıkarıp zaman damgalı bir kayda çeviriyoruz: genel bir input buffer, koşulunu bekleyen bir komut kuyruğu ve "çeyrek daire + yumruk"u pencere içinde yakalayan bir dizi tanıyıcı. Ve zaman dışarıdan geldiği için hepsi tarayıcı açmadan test ediliyor.*
