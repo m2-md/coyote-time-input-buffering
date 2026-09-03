@@ -1,5 +1,9 @@
 # Coyote Time & Input Buffering — Hadouken
 
+<!-- LINKS:BEGIN — üretildi: scripts/sync-repo-links.py · elle düzenleme -->
+**▶ [Live demo](https://m2-md.github.io/coyote-time-input-buffering/)** · [Source](https://github.com/m2-md/coyote-time-input-buffering)
+<!-- LINKS:END -->
+
 Working code for the article "Why the Hadouken Didn't Come Out: Beyond Coyote Time —
 Input Buffering, Command Queues and the Game's Short-Term Memory".
 
