@@ -1,6 +1,6 @@
-// render.ts — SADECE çizim. Hiç mantık yok; anlık durum enstantanesini alır ve
-// canvas'a döker. Overlay bir teşhis aracı: tampon damgaları + yaşları, komut
-// kuyruğu, dizi ilerleme çubuğu, "SPECIAL!" flaşı, coyote penceresi.
+// render.ts — draw only. No logic; takes a momentary state snapshot and
+// paints to canvas. Overlay is a diagnostic tool: buffer stamps + ages, command
+// queue, sequence progress bar, "SPECIAL!" flash, coyote window.
 
 import type { Stamp } from "./input-buffer";
 import type { Command } from "./command-queue";
@@ -11,24 +11,24 @@ export interface Ctx {
 
 export interface Snapshot {
   now: number;
-  // Karakter
+  // Character
   px: number;
   py: number;
   r: number;
   grounded: boolean;
   facing: 1 | -1;
-  // Zemin platformları [x, y, w]
+  // Ground platforms [x, y, w]
   platforms: readonly [number, number, number][];
   // Coyote
   lastGroundedAt: number;
   coyoteWindow: number;
   inCoyote: boolean;
-  // Bellek
+  // Memory
   stamps: ReadonlyArray<Readonly<Stamp>>;
   pending: ReadonlyArray<Readonly<Command<Ctx>>>;
   jumpWindow: number;
   queueTtl: number;
-  // Dizi
+  // Sequence
   steps: readonly string[];
   step: number;
   specialFlashUntil: number;
@@ -52,13 +52,13 @@ export function render(
   g.fillStyle = BG;
   g.fillRect(0, 0, W, H);
 
-  // Platformlar
+  // Platforms
   g.fillStyle = GROUND;
   for (const [x, y, w] of s.platforms) {
     g.fillRect(x, y, w, 16);
   }
 
-  // Coyote penceresi: uçurumdan çıkınca yeşil "hâlâ zıplayabilirsin" halkası
+  // Coyote window: green "you can still jump" ring after stepping off edge
   if (s.inCoyote && !s.grounded) {
     g.strokeStyle = GREEN;
     g.lineWidth = 3;
@@ -71,12 +71,12 @@ export function render(
     g.fillText("COYOTE", s.px, s.py - s.r - 14);
   }
 
-  // Karakter
+  // Character
   g.fillStyle = s.grounded ? CHAR : CHAR_AIR;
   g.beginPath();
   g.arc(s.px, s.py, s.r, 0, Math.PI * 2);
   g.fill();
-  // Bakış yönü
+  // Facing direction
   g.strokeStyle = "#0c0a09";
   g.lineWidth = 3;
   g.beginPath();
@@ -84,7 +84,7 @@ export function render(
   g.lineTo(s.px + s.facing * s.r, s.py);
   g.stroke();
 
-  // SPECIAL! flaşı
+  // SPECIAL! flash
   if (s.now < s.specialFlashUntil) {
     const t = (s.specialFlashUntil - s.now) / 600; // 0..1
     g.save();
@@ -119,7 +119,7 @@ function drawOverlay(
   g.font = "12px ui-monospace, monospace";
   if (s.stamps.length === 0) {
     g.fillStyle = DIM;
-    g.fillText("(boş)", x, y);
+    g.fillText("(empty)", x, y);
     y += 16;
   }
   for (const st of s.stamps) {
@@ -147,13 +147,13 @@ function drawOverlay(
   g.font = "12px ui-monospace, monospace";
   if (s.pending.length === 0) {
     g.fillStyle = DIM;
-    g.fillText("(boş)", x, y);
+    g.fillText("(empty)", x, y);
     y += 16;
   }
   for (const cmd of s.pending) {
     const wait = Math.round(s.now - cmd.at);
     g.fillStyle = AMBER;
-    g.fillText(`${cmd.action}  bekliyor ${wait}ms`, x, y);
+    g.fillText(`${cmd.action}  waiting ${wait}ms`, x, y);
     y += 16;
   }
 }

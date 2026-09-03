@@ -1,6 +1,6 @@
-// main.ts — DEMO. DOM/canvas + gerçek saat (performance.now) burada. Saf mantık
-// (input-buffer / command-queue / sequence / latency) hiç duvar saatine bakmaz;
-// biz `now`'ı buradan enjekte ederiz.
+// main.ts — DEMO. DOM/canvas + real clock (performance.now) live here. Pure logic
+// (input-buffer / command-queue / sequence / latency) does not read wall clock;
+// we inject `now` from here.
 
 import { InputBuffer, coyoteWindow } from "./input-buffer";
 import { CommandQueue } from "./command-queue";
@@ -10,28 +10,28 @@ import { render, type Ctx, type Snapshot } from "./render";
 const W = 900;
 const H = 520;
 
-// Pencereler (ms)
+// Windows (ms)
 const COYOTE = 100;
 const JUMP_WINDOW = 120;
 const QUEUE_TTL = 200;
 const STEP_WINDOW = 200;
 const PRUNE_MAX = 500;
 
-// --- Bellek katmanı ---
+// --- Buffer layer ---
 const buffer = new InputBuffer();
 const queue = new CommandQueue<Ctx>();
 const STEPS = ["down", "down-forward", "forward", "punch"] as const;
 const hadouken = new SequenceMatcher(STEPS, STEP_WINDOW);
 
-// Basma ve bırakma AYRI olaylar: ikisi de deftere zaman damgasıyla yazılır.
+// Press and release are SEPARATE events: both recorded with timestamp.
 function onKeyDown(action: string, now: number): void {
-  buffer.press(action, now); // yükselen kenar: "punch"
+  buffer.press(action, now); // rising edge: "punch"
 }
 function onKeyUp(action: string, now: number): void {
-  buffer.press(action + "^", now); // düşen kenar: "punch^"
+  buffer.press(action + "^", now); // falling edge: "punch^"
 }
 
-// --- Fizik durumu ---
+// --- Physics state ---
 const GRAVITY = 2000; // px/s^2
 const MOVE = 260; // px/s
 const JUMP_V = 720; // px/s
@@ -61,7 +61,7 @@ function groundYAt(x: number): number | null {
   return null;
 }
 
-/** Bakış yönü + bir arrow tuşu → dizi token'ı. */
+/** Facing direction + arrow key → sequence token. */
 function directionToken(): string | null {
   const down = held.has("ArrowDown");
   const fwd = held.has("ArrowRight") || held.has("ArrowLeft");
@@ -72,14 +72,14 @@ function directionToken(): string | null {
 }
 
 function attemptJump(now: number): void {
-  // Tampon: son JUMP_WINDOW ms içinde zıpla bastıysak niyet taze.
+  // Buffer: fresh intent if jump was pressed within the last JUMP_WINDOW ms.
   if (!buffer.consume("jump", now, JUMP_WINDOW)) return;
   const canJumpNow =
     state.grounded || coyoteWindow(state.lastGroundedAt, now, COYOTE);
   if (canJumpNow) {
     doJump();
   } else {
-    // Koşul zaman-dışı (yere değme): komut kuyruğuna beklet.
+    // Condition out-of-time (touch ground): hold in command queue.
     queue.enqueue({ action: "jump", at: now, ready: (c) => c.grounded });
   }
 }
@@ -89,7 +89,7 @@ function doJump(): void {
   state.grounded = false;
 }
 
-// --- Klavye ---
+// --- Keyboard ---
 window.addEventListener("keydown", (e) => {
   const now = performance.now();
   if (e.repeat) return;
@@ -103,7 +103,7 @@ window.addEventListener("keydown", (e) => {
     onKeyDown("jump", now);
   }
 
-  // Dizi token'ı: yön tuşları
+  // Sequence token: direction keys
   if (
     e.key === "ArrowDown" ||
     e.key === "ArrowRight" ||
@@ -116,7 +116,7 @@ window.addEventListener("keydown", (e) => {
     }
   }
 
-  // Yumruk / attack
+  // Punch / attack
   if (e.key === "j" || e.key === "J") {
     onKeyDown("punch", now);
     if (hadouken.feed("punch", now)) {
@@ -132,19 +132,19 @@ window.addEventListener("keyup", (e) => {
   if (e.key === " " || e.key === "ArrowUp") onKeyUp("jump", now);
 });
 
-// --- Döngü ---
+// --- Loop ---
 function update(dt: number, now: number): void {
-  // Yatay hareket
+  // Horizontal movement
   let dx = 0;
   if (held.has("ArrowLeft")) dx -= MOVE * dt;
   if (held.has("ArrowRight")) dx += MOVE * dt;
   state.px = Math.max(R, Math.min(W - R, state.px + dx));
 
-  // Yerçekimi
+  // Gravity
   state.vy += GRAVITY * dt;
   state.py += state.vy * dt;
 
-  // Zemin teması
+  // Ground contact
   const gy = groundYAt(state.px);
   const wasGrounded = state.grounded;
   if (gy !== null && state.py >= gy - R && state.vy >= 0) {
@@ -154,20 +154,20 @@ function update(dt: number, now: number): void {
     state.lastGroundedAt = now;
   } else {
     if (wasGrounded && (gy === null || state.py < gy - R)) {
-      // Uçurumdan/platform kenarından yeni ayrıldık: coyote saati başlasın.
+      // Stepped off cliff/platform edge: start coyote timer.
       state.lastGroundedAt = now;
     }
     state.grounded = false;
   }
 
-  // Düşüş sınırı: aşağı düşerse başlangıca dön
+  // Fall limit: respawn if fallen below screen
   if (state.py > H + 200) {
     state.px = 180;
     state.py = 380 - R;
     state.vy = 0;
   }
 
-  // Bellek işleme
+  // Process buffer & queue
   attemptJump(now);
   const fired = queue.flush(now, QUEUE_TTL, { grounded: state.grounded });
   for (const action of fired) {

@@ -1,74 +1,76 @@
-# Coyote Time & Girdi Tamponu — Hadouken
+# Coyote Time & Input Buffering — Hadouken
 
-"Hadouken Neden Çıkmadı: Coyote Time'ın Ötesinde Girdi Tamponu, Komut Kuyruğu ve
-Oyunun Kısa Süreli Hafızası" makalesinin çalışan kodu.
+Working code for the article "Why the Hadouken Didn't Come Out: Beyond Coyote Time —
+Input Buffering, Command Queues and the Game's Short-Term Memory".
 
-Girdiyi bir _olay_ (event) değil, zaman damgalı bir _kayıt_ (record) olarak tutan
-kısa süreli oyun hafızası. Bütün saf mantık `now`'ı dışarıdan parametre olarak
-aldığı için duvar saatine bağlı değildir — testte zamanı elle enjekte ederiz,
-gerçek milisaniye beklemeyiz.
+A short-term game memory that stores input not as an _event_ but as a timestamped
+_record_. All the pure logic takes `now` as an argument from the outside, so it is
+never tied to the wall clock — in tests we inject time by hand instead of waiting
+real milliseconds.
 
-## Ne var
+## What's in here
 
-Saf mantık (DOM/canvas/duvar saati görmez, tamamen test edilebilir):
+Pure logic (never touches DOM/canvas/wall clock, fully testable):
 
 - `src/input-buffer.ts` — `InputBuffer` (`press` / `consume` / `prune` / `peek`)
-  ve `coyoteWindow`. Zaman damgalı damgalar; pencere içindeyse en yeni tüketilmemiş
-  kaydı bir kez tüketir.
-- `src/command-queue.ts` — `CommandQueue<Ctx>`: koşulu zaman-dışı olan (yere değme,
-  animasyon bitişi) eylemleri `ready(ctx)` sağlanınca ateşler, `ttl`'i aşınca düşer.
-  Süre aşımı kontrolü `ready`'den **önce** gelir (bayat girdiyi affetmemek için).
-- `src/sequence.ts` — `SequenceMatcher`: çeyrek daire + yumruk gibi dizileri kısmi
-  ilerleme + adım penceresiyle tanır.
-- `src/latency.ts` — `FRAME_MS`, `latencyFrames`, `windowInFrames`: tamponun gizli
-  bedeli olan girdi gecikmesini milisaniyeden kareye çevirir.
+  and `coyoteWindow`. Timestamped presses; if one falls inside the window, it
+  consumes the newest unconsumed record exactly once.
+- `src/command-queue.ts` — `CommandQueue<Ctx>`: fires actions whose condition is
+  non-temporal (landing on the ground, animation end) as soon as `ready(ctx)` holds,
+  and drops them once `ttl` is exceeded. The timeout check comes **before** `ready`
+  (so that stale input is not forgiven).
+- `src/sequence.ts` — `SequenceMatcher`: recognizes sequences like quarter-circle +
+  punch with partial progress + a per-step window.
+- `src/latency.ts` — `FRAME_MS`, `latencyFrames`, `windowInFrames`: converts the
+  buffer's hidden cost — input latency — from milliseconds into frames.
 
-Demo (DOM + canvas + gerçek saat sadece burada):
+Demo (DOM + canvas + the real clock live only here):
 
-- `src/render.ts` + `src/main.ts` + `index.html` — tek karakter: zıplama
-  (coyote + jump buffer), `↓ ↘ → + J` ile hadouken. Ekran kenarında CANLI overlay:
-  tampon damgaları + yaşları (tüketilenler üstü çizili), komut kuyruğu, dizi ilerleme
-  çubuğu ve "SPECIAL!" flaşı.
+- `src/render.ts` + `src/main.ts` + `index.html` — a single character: jumping
+  (coyote + jump buffer), hadouken with `↓ ↘ → + J`. A LIVE overlay at the edge of
+  the screen: buffer presses with their ages (consumed ones struck through), the
+  command queue, the sequence progress bar and the "SPECIAL!" flash.
 
-## Kurulum
+## Setup
 
 ```bash
 npm install
 ```
 
-## Çalıştırma
+## Running
 
 ```bash
 npm run dev      # Vite dev server → http://localhost:5173/
 ```
 
-Tarayıcıda açın. `file://` ile açarsanız modüller yüklenmez ve boş ekran görürsünüz.
+Open it in a browser. If you open it with `file://` the modules won't load and you
+will see a blank screen.
 
-**Kontroller:** `← →` yürü · `Space`/`↑` zıpla · `↓ ↘ → + J` special (hadouken).
-Platform kenarından yürüyünce karakterin etrafında kısa süre yeşil `COYOTE` halkası
-belirir — o an hâlâ zıplayabilirsiniz.
+**Controls:** `← →` walk · `Space`/`↑` jump · `↓ ↘ → + J` special (hadouken).
+When you walk off the edge of a platform a green `COYOTE` ring appears around the
+character for a short while — at that moment you can still jump.
 
 ## Test
 
 ```bash
-npm test         # 18 test, tarayıcı açmaz, birkaç ms
+npm test         # 18 tests, opens no browser, a few ms
 npm run typecheck
 ```
 
-18 birim testi belleğin bütün iddialarını enjekte edilen `now` ile doğrular:
-pencere içi/dışı tüketim, çift tüketim engeli, sondan tarama, negatif yaş, prune,
-komut kuyruğunun koşul/süre-aşımı davranışı, dizi tanıma + sıfırlama, ve
-milisaniye→kare çevrimi.
+The 18 unit tests verify every claim the memory makes using an injected `now`:
+consumption inside/outside the window, the double-consume guard, scanning from the
+end, negative age, prune, the command queue's condition/timeout behaviour, sequence
+recognition + reset, and the millisecond→frame conversion.
 
 ## Bench
 
 ```bash
-npm run bench    # vite-node ile throughput + deterministik senaryo
+npm run bench    # throughput + deterministic scenario via vite-node
 ```
 
-`InputBuffer press+consume` ve `SequenceMatcher feed` throughput'unu ölçer, ayrıca
-belirli zaman-damgalı bir girdi dizisinin beklenen komutları (`["jump"]` + special)
-ürettiğini deterministik olarak doğrular.
+Measures the throughput of `InputBuffer press+consume` and `SequenceMatcher feed`,
+and additionally verifies deterministically that a specific timestamped input
+sequence produces the expected commands (`["jump"]` + special).
 
 ## Build
 
@@ -76,16 +78,16 @@ belirli zaman-damgalı bir girdi dizisinin beklenen komutları (`["jump"]` + spe
 npm run build    # tsc && vite build → dist/
 ```
 
-## Dosya yapısı
+## File layout
 
 ```
 src/
-  input-buffer.ts   # InputBuffer + coyoteWindow (saf)
-  command-queue.ts  # CommandQueue<Ctx> (saf)
-  sequence.ts       # SequenceMatcher (saf)
-  latency.ts        # latencyFrames + windowInFrames (saf)
-  render.ts         # Canvas2D çizim + overlay (sadece render)
-  main.ts           # Klavye → bellek → fizik döngüsü (DOM + gerçek saat)
+  input-buffer.ts   # InputBuffer + coyoteWindow (pure)
+  command-queue.ts  # CommandQueue<Ctx> (pure)
+  sequence.ts       # SequenceMatcher (pure)
+  latency.ts        # latencyFrames + windowInFrames (pure)
+  render.ts         # Canvas2D drawing + overlay (render only)
+  main.ts           # Keyboard → memory → physics loop (DOM + real clock)
 test/
   input-buffer.test.ts
   command-queue.test.ts
@@ -95,6 +97,6 @@ bench/
   bench.ts
 ```
 
-## Lisans
+## License
 
 MIT

@@ -1,8 +1,8 @@
 // command-queue.ts
 export interface Command<Ctx> {
   action: string;
-  at: number; // kuyruğa girdiği an (ms)
-  ready: (ctx: Ctx) => boolean; // ne zaman yapılabilir?
+  at: number; // timestamp when queued (ms)
+  ready: (ctx: Ctx) => boolean; // condition when executable
 }
 
 export class CommandQueue<Ctx> {
@@ -13,26 +13,26 @@ export class CommandQueue<Ctx> {
   }
 
   /**
-   * Koşulu sağlanan komutları sırayla dışarı ver; `ttl`'i aşanları sessizce düş.
-   * Dönüş: bu karede ateşlenen aksiyonlar. Yan etki yok: kuyruk sadece kendi
-   * listesini günceller, eylemi çağıran taraf uygular (ör. FSM'e send).
+   * Dispatch commands whose condition is met in order; silently drop expired ones past `ttl`.
+   * Return: actions fired this frame. No side effects: the queue only updates its
+   * internal list; caller executes the action (e.g. sends to FSM).
    */
   flush(now: number, ttl: number, ctx: Ctx): string[] {
     const fired: string[] = [];
     const keep: Command<Ctx>[] = [];
     for (const cmd of this.items) {
-      if (now - cmd.at > ttl) continue; // süre aşımı: düş
+      if (now - cmd.at > ttl) continue; // expired: drop
       if (cmd.ready(ctx)) {
-        fired.push(cmd.action); // koşul sağlandı: ateşle
+        fired.push(cmd.action); // condition met: fire
       } else {
-        keep.push(cmd); // henüz olmadı: beklet
+        keep.push(cmd); // not ready yet: keep
       }
     }
     this.items = keep;
     return fired;
   }
 
-  /** Görselleştirme için bekleyen komutlar. */
+  /** Pending commands for visualization. */
   get pending(): ReadonlyArray<Readonly<Command<Ctx>>> {
     return this.items;
   }

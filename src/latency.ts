@@ -1,9 +1,9 @@
 // latency.ts
-export const FRAME_MS = 1000 / 60; // 60 FPS'te bir kare ≈ 16.67 ms
+export const FRAME_MS = 1000 / 60; // one frame at 60 FPS ≈ 16.67 ms
 
 /**
- * Basış ile eylemin gerçekleştiği an arasındaki gecikme, kare cinsinden.
- * Pozitif: eylem basıştan sonra ateşlendi (tamponlandı/geç). 0: aynı karede.
+ * Latency between button press and action execution, in frames.
+ * Positive: action fired after press (buffered/delayed). 0: same frame.
  */
 export function latencyFrames(
   pressAt: number,
@@ -13,7 +13,7 @@ export function latencyFrames(
   return (actionAt - pressAt) / frameMs;
 }
 
-/** Bir pencere süresi (ms) kaç kareye denk gelir. */
+/** Converts window duration (ms) to frame count. */
 export function windowInFrames(window: number, frameMs = FRAME_MS): number {
   return window / frameMs;
 }

@@ -1,7 +1,7 @@
 {
   "name": "coyote-time-input-buffering",
   "version": "1.0.0",
-  "description": "Zaman damgalı girdi tamponu, komut kuyruğu, negatif kenar ve dizi tanıma (hadouken) — tarayıcısız test edilebilir kısa süreli oyun hafızası",
+  "description": "Timestamped input ring buffer, command queue, coyote jump forgiveness, and fighting game sequence recognizer (Hadouken parser) testable headless in Vitest.",
   "type": "module",
   "license": "MIT",
   "scripts": {
